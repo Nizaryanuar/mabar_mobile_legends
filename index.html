@@ -1,0 +1,834 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mabar Mobile Legend</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700;800&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky bar, hero berisi kartu undangan + pilih sisi (Cahaya/Petir), tiket detail, minigame Retribution, portofolio bertab, RSVP ke WhatsApp. Satu tampilan gelap yang disengaja; aksen berganti sesuai sisi yang dipilih. */
+:root{
+  --bg:#080B14; --surface:#111726; --surface-2:#18203A; --line:#273050;
+  --ink:#EEF1F8; --ink-2:#A8B1C7; --ink-3:#7480A0;
+  --accent:#5CC8FF; --accent-2:#8B7CFF; --accent-ink:#04121C; --glow:rgba(92,200,255,.35);
+  --good:#4ADE9A; --bad:#FF6B7A;
+  --display:'Oxanium',system-ui,sans-serif; --body:'Barlow',system-ui,sans-serif;
+  --track:#05070D; --glass:rgba(17,23,38,.8); --nav:rgba(8,11,20,.82); --bar:#080B14; --hero-fade:rgba(8,11,20,.55); --hero-img:.45; --ring:rgba(255,255,255,.03); --shadow:0 30px 70px rgba(0,0,0,.55); --on-good:#02140B; --on-bad:#1A0306;
+  color-scheme:dark;
+}
+/* Sisi Cahaya = tampilan terang */
+:root[data-faction="cahaya"]{
+  --bg:#F6F5F0; --surface:#FFFFFF; --surface-2:#EFEDE4; --line:#DDD8C8;
+  --ink:#1A2030; --ink-2:#485068; --ink-3:#6F778E;
+  --accent:#B26A00; --accent-2:#E3922B; --accent-ink:#FFFFFF; --glow:rgba(227,146,43,.30);
+  --good:#128A58; --bad:#D0344B;
+  --track:#E3DFD1; --glass:rgba(255,255,255,.78); --nav:rgba(246,245,240,.86); --bar:#F6F5F0; --hero-fade:rgba(246,245,240,.55); --hero-img:.4; --ring:rgba(0,0,0,.04); --shadow:0 24px 60px rgba(70,50,10,.22); --on-good:#FFFFFF; --on-bad:#FFFFFF;
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{transition:background .4s ease,color .4s ease;margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4{font-family:var(--display);margin:0;line-height:1.1;text-wrap:balance;letter-spacing:-.01em}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+section{padding-block:72px}
+.eyebrow{font:600 12px/1 var(--display);text-transform:uppercase;letter-spacing:.2em;color:var(--accent)}
+.sec-title{font-size:clamp(28px,4.2vw,42px);font-weight:800;margin:14px 0 12px}
+.sec-sub{color:var(--ink-2);max-width:60ch}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 24px;border-radius:10px;font:700 15px var(--display);letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border:1px solid var(--accent);transition:transform .15s ease,background .15s ease,box-shadow .15s ease}
+.btn-solid{background:var(--accent);color:var(--accent-ink)}
+.btn-solid:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--glow)}
+.btn-ghost{background:transparent;color:var(--accent)}
+.btn-ghost:hover{background:var(--accent);color:var(--accent-ink)}
+
+/* NAV */
+header.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--nav);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bar)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px}
+.brand{font:800 17px var(--display);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;display:flex;align-items:center;gap:10px}
+.brand i{width:10px;height:10px;background:var(--accent);transform:rotate(45deg);box-shadow:0 0 12px var(--glow)}
+.nav ul{display:flex;gap:6px;list-style:none;margin:0;padding:0;overflow-x:auto;scrollbar-width:none}
+.nav ul::-webkit-scrollbar{display:none}
+.nav ul a{display:block;padding:10px 12px;font:600 13px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
+.nav ul a:hover{color:var(--accent)}
+
+/* HERO */
+.hero{position:relative;overflow:hidden;padding-block:56px 72px;isolation:isolate}
+.hero-bg{position:absolute;inset:-40px;z-index:-2}
+.hero-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(28px) saturate(1.2);opacity:0;transition:opacity .8s ease}
+.hero-bg img.on{opacity:var(--hero-img)}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,var(--hero-fade),var(--bg) 96%)}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+.hero h1{font-size:clamp(40px,6.4vw,76px);font-weight:800;margin:18px 0 20px;text-transform:uppercase}
+.hero h1 em{font-style:normal;color:var(--accent);text-shadow:0 0 28px var(--glow)}
+.hero .lead{font-size:19px;color:var(--ink-2);max-width:50ch}
+.guest{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-top:28px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 220px;max-width:340px}
+.field label{font:600 12px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.field input{min-height:48px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--glass);color:var(--ink);font:500 17px var(--body);width:100%}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.cd{display:flex;gap:10px;margin-top:32px}
+.cd div{min-width:68px;padding:10px 8px 8px;border:1px solid var(--line);border-radius:10px;background:var(--glass);text-align:center}
+.cd b{display:block;font:800 28px/1 var(--display);font-variant-numeric:tabular-nums}
+.cd span{font:600 10px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.cd-note{margin-top:10px;font-size:14px;color:var(--ink-3)}
+
+.card-art{position:relative;max-width:520px;width:100%;margin-inline:auto}
+.frame{position:relative;aspect-ratio:16/10;border-radius:18px;overflow:hidden;border:1px solid var(--accent);box-shadow:0 0 0 6px var(--ring),var(--shadow),0 0 60px var(--glow);transform:rotate(1.6deg);transition:box-shadow .4s ease,border-color .4s ease}
+.frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s ease;max-width:none}
+.frame img.on{opacity:1}
+.frame::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(8,11,20,.75))}
+.tag-corner{color:#fff;position:absolute;left:14px;bottom:12px;z-index:2;font:700 12px var(--display);letter-spacing:.18em;text-transform:uppercase}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+.side{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--glass);cursor:pointer;min-height:64px;transition:border-color .2s ease,background .2s ease}
+.side b{font:700 15px var(--display);letter-spacing:.06em;text-transform:uppercase}
+.side span{font-size:13px;color:var(--ink-2);line-height:1.35}
+.side[aria-pressed="true"]{border-color:var(--accent);background:var(--surface-2);box-shadow:0 0 24px var(--glow)}
+
+/* TICKET */
+.ticket{display:grid;grid-template-columns:1fr auto;background:var(--surface);border:1px solid var(--line);border-radius:20px;position:relative;margin-top:36px}
+.ticket::before,.ticket::after{content:"";position:absolute;right:calc(var(--stub) - 11px);width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--line)}
+.ticket{--stub:200px}
+.ticket::before{top:-12px;border-top-color:var(--bg);border-left-color:var(--bg);transform:rotate(45deg)}
+.ticket::after{bottom:-12px;border-bottom-color:var(--bg);border-right-color:var(--bg);transform:rotate(45deg)}
+.t-main{padding:32px;display:grid;grid-template-columns:repeat(2,1fr);gap:26px 32px;min-width:0}
+.t-item small{display:block;font:600 11px var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.t-item b{font:700 22px/1.25 var(--display);overflow-wrap:anywhere}
+.t-item p{font-size:15px;color:var(--ink-2);margin-top:2px}
+.t-stub{width:var(--stub);border-left:2px dashed var(--line);padding:28px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;background:linear-gradient(160deg,var(--surface-2),var(--surface));border-radius:0 20px 20px 0}
+.t-stub .big{font:800 54px/1 var(--display);color:var(--accent);text-shadow:0 0 24px var(--glow)}
+.t-stub small{font:600 11px var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.t-stub .to{font:700 16px var(--display);overflow-wrap:anywhere}
+.roles{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.pill{padding:6px 12px;border-radius:999px;border:1px solid var(--line);font:600 13px var(--display);letter-spacing:.06em;color:var(--ink-2)}
+
+/* MUSIC */
+.music{position:fixed;z-index:70;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:10px;pointer-events:none}
+.music>*{pointer-events:auto}
+.music button{width:52px;height:52px;padding:0;border-radius:50%;border:1px solid var(--accent);background:var(--surface);color:var(--accent);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.music-hint{font:600 13px/1.3 var(--display);letter-spacing:.05em;padding:10px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);box-shadow:var(--shadow);max-width:calc(100vw - 110px)}
+.eq{display:flex;gap:3px;align-items:flex-end;height:18px}
+.eq i{width:3px;height:6px;background:currentColor;border-radius:2px}
+.music button.on .eq i{animation:eq .9s ease-in-out infinite alternate}
+.music button.on .eq i:nth-child(2){animation-delay:.2s}
+.music button.on .eq i:nth-child(3){animation-delay:.4s}
+.music button.on .eq i:nth-child(4){animation-delay:.1s}
+@keyframes eq{to{height:18px}}
+.music button.on .play,.music button:not(.on) .eq{display:none}
+
+/* ROLES */
+.callout{margin-top:20px;padding:16px 20px;border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;color:var(--ink-2);max-width:78ch;font-size:16px}
+.rolegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}
+.rolecard{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:18px;background:var(--surface);overflow:hidden;min-width:0;transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.rolecard:hover{transform:translateY(-3px)}
+.rolecard[data-on="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 14px 44px var(--glow)}
+.rc-img{position:relative;aspect-ratio:16/10;overflow:hidden;background:var(--surface-2)}
+.rc-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+.rolecard:hover .rc-img img{transform:scale(1.05)}
+.rc-img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(8,11,20,.9))}
+.rc-name{color:#fff;position:absolute;left:16px;bottom:12px;z-index:1;font:800 28px var(--display);text-transform:uppercase;letter-spacing:.04em}
+.rc-pos{color:#fff;position:absolute;right:12px;top:12px;z-index:1;font:700 11px var(--display);letter-spacing:.14em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:rgba(8,11,20,.78);border:1px solid var(--line)}
+.rc-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:14px;flex:1}
+.rc-tag{font:700 17px var(--display);color:var(--accent)}
+.rc-body p{font-size:16px;color:var(--ink-2)}
+.rc-body p.rc-tag{color:var(--accent)}
+.meters{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;align-items:center;font:600 12px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.lv{display:flex;gap:4px}
+.lv i{flex:1;max-width:30px;height:6px;border-radius:3px;background:var(--line)}
+.lv i.on{background:var(--accent)}
+.rc-body p.rc-job{font-size:15px;border-top:1px dashed var(--line);padding-top:12px}
+.rc-job b{color:var(--ink);font-family:var(--display);letter-spacing:.03em}
+.rc-btn{margin-top:auto;width:100%;min-height:44px}
+.rolecard[data-on="true"] .rc-btn{background:var(--accent);color:var(--accent-ink)}
+@media (max-width:900px){.rolegrid{grid-template-columns:1fr 1fr}}
+@media (max-width:620px){.rolegrid{grid-template-columns:1fr}}
+
+/* GAME */
+.game-wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;margin-top:36px;align-items:stretch}
+.arena{position:relative;border:1px solid var(--line);border-radius:20px;background:radial-gradient(120% 90% at 50% 0%,var(--surface-2),var(--surface) 70%);padding:24px;display:flex;flex-direction:column;gap:18px;overflow:hidden;min-width:0}
+.hud{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.pips{display:flex;gap:6px}.pips i{width:26px;height:6px;border-radius:3px;background:var(--line)}
+.pips i.done{background:var(--accent)}.pips i.fail{background:var(--bad)}.pips i.cur{background:var(--ink-2)}
+.score{font:700 15px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.score b{color:var(--ink);font-size:20px;font-variant-numeric:tabular-nums}
+.boss{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--track)}
+.boss img{width:100%;height:100%;object-fit:cover;display:block;max-width:none}
+.boss.shake img{animation:shake .25s linear}
+.boss.dead img{animation:flash .7s ease}
+.boss.lost img{filter:grayscale(1) brightness(.6)}
+.boss.lost::after{content:"";position:absolute;inset:0;background:rgba(255,107,122,.18)}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes flash{0%{filter:brightness(1)}40%{filter:brightness(2.2) saturate(1.5)}100%{filter:brightness(1)}}
+.float{position:absolute;top:16px;left:50%;transform:translateX(-50%);font:800 30px var(--display);color:var(--good);opacity:0;pointer-events:none;white-space:nowrap;text-shadow:0 2px 14px #000}
+.float.bad{color:var(--bad)}
+.float.show{animation:rise 1s ease forwards}
+@keyframes rise{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-30px)}}
+.hpbar{position:relative;height:30px;border-radius:15px;background:var(--track);border:1px solid var(--line);overflow:hidden;margin-top:6px}
+.hpfill{position:absolute;inset:0 auto 0 0;width:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+.zone{position:absolute;inset:0 auto 0 0;width:40%;background:repeating-linear-gradient(135deg,rgba(74,222,154,.6) 0 8px,rgba(74,222,154,.38) 8px 16px);border-right:3px solid var(--good);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.zone span{font:800 11px var(--display);letter-spacing:.14em;color:var(--on-good);background:var(--good);padding:2px 8px;border-radius:6px;white-space:nowrap}
+.zone.on{background:var(--good);animation:pulse .35s ease-in-out infinite alternate}
+@keyframes pulse{to{box-shadow:inset 0 0 20px #fff9}}
+.etick{position:absolute;top:0;bottom:0;width:3px;background:var(--bad);box-shadow:0 0 8px var(--bad);display:none}
+.etick.show{display:block}
+.enemy{margin-top:10px;display:flex;align-items:center;gap:8px;font:600 13px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.enemy i{width:10px;height:10px;border-radius:50%;background:var(--ink-3);flex:none}
+.enemy.fired{color:var(--bad)}.enemy.fired i{background:var(--bad);box-shadow:0 0 10px var(--bad)}
+.hpnum{display:flex;justify-content:space-between;font:600 13px var(--display);letter-spacing:.06em;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.msg{min-height:52px;font:500 16px/1.4 var(--body);color:var(--ink-2);text-align:center;display:grid;place-items:center}
+.msg b{color:var(--ink)}
+.retri{align-self:center;width:120px;height:120px;padding:0;border-radius:50%;border:3px solid var(--accent);background:#0A0E1A;overflow:hidden;cursor:pointer;box-shadow:0 0 0 6px var(--ring),0 0 34px var(--glow);touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s ease}
+.retri img{width:100%;height:100%;display:block;pointer-events:none}
+.retri:active{transform:scale(.93)}
+.retri:disabled{opacity:.35;cursor:default;box-shadow:none}
+.start{align-self:center}
+.side-panel{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:20px 22px}
+.panel h3{font-size:18px;font-weight:700;margin-bottom:10px;letter-spacing:.02em}
+.panel ol{margin:0;padding-left:20px;color:var(--ink-2);font-size:16px;display:flex;flex-direction:column;gap:6px}
+.rank{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.rank b{font:800 30px var(--display);color:var(--accent)}
+.rank span{color:var(--ink-2)}
+.ladder{list-style:none;padding:0;margin:12px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font:600 13px var(--display);letter-spacing:.04em;color:var(--ink-3)}
+.ladder li{display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums}
+.ladder li.you{color:var(--accent)}
+
+/* GAME 2 */
+.g2-pic{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--track)}
+.g2-pic img{width:100%;height:100%;object-fit:cover;display:block;max-width:none;filter:blur(28px);transform:scale(1.15)}
+.timer{height:8px;border-radius:4px;background:var(--track);border:1px solid var(--line);overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+.timer.low i{background:var(--bad)}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.opt{min-height:54px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font:700 14px var(--display);letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink);min-width:0}
+.opt small{font:600 10px var(--display);color:var(--ink-3);letter-spacing:.1em}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.ok{background:var(--good);border-color:var(--good);color:var(--on-good)}
+.opt.no{background:var(--bad);border-color:var(--bad);color:var(--on-bad)}
+.opt.ok small,.opt.no small{color:inherit}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.split div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface-2)}
+.split small{display:block;font:600 11px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.split b{font:800 24px var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.split span{font-size:13px;color:var(--ink-3);margin-left:4px}
+@media (max-width:480px){.opts{grid-template-columns:1fr 1fr}}
+
+/* PORTFOLIO */
+.tabs{display:flex;gap:8px;margin:32px 0 28px;flex-wrap:wrap}
+.tab{min-height:44px;padding:0 20px;border-radius:10px;border:1px solid var(--line);background:transparent;font:700 14px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.profile{display:grid;grid-template-columns:.75fr 1.25fr;gap:40px;align-items:start}
+.avatar{aspect-ratio:1;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:var(--surface);max-width:100%}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.profile h3{font-size:clamp(24px,3vw,32px);font-weight:800}
+.profile .role{color:var(--accent);font:600 14px var(--display);letter-spacing:.12em;text-transform:uppercase;margin:8px 0 16px}
+.profile p.bio{color:var(--ink-2);max-width:60ch}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:24px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--surface);min-width:0}
+.stat b{display:block;font:800 26px/1 var(--display);color:var(--accent);font-variant-numeric:tabular-nums}
+.stat span{display:block;margin-top:6px;font-size:13px;color:var(--ink-2);line-height:1.35}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chips .pill{background:var(--surface)}
+.works{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.work{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.work small{font:600 12px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.work h4{font-size:20px;font-weight:700}
+.work p{font-size:16px;color:var(--ink-2)}
+.work ul{list-style:none;padding:0;margin:auto 0 0;display:flex;flex-wrap:wrap;gap:6px;padding-top:6px}
+.work li{font:600 12px var(--display);letter-spacing:.04em;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--ink)}
+.work .shot{all:unset;display:block;cursor:zoom-in;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.work .shot img{display:block;width:100%}
+.certs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.cert{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:12px 12px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.cert button{all:unset;cursor:zoom-in;display:block;aspect-ratio:3/2;border-radius:10px;overflow:hidden;background:var(--surface-2)}
+.cert img{width:100%;height:100%;object-fit:cover;display:block}
+.cert h4{font-size:17px;font-weight:700;padding:0 6px}
+.cert p{font-size:14px;color:var(--ink-2);padding:0 6px}
+.lb{position:fixed;inset:0;z-index:200;background:rgba(3,5,10,.9);display:none;place-items:center;padding:24px;cursor:zoom-out}
+.lb.open{display:grid}.lb img{max-width:min(1100px,100%);max-height:88vh;border-radius:10px}
+
+/* RSVP */
+.rsvp{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:32px;align-items:start}
+.rsvp .panel{display:flex;flex-direction:column;gap:18px}
+.rolepick{display:flex;flex-wrap:wrap;gap:8px}
+.rolepick button{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:transparent;font:700 14px var(--display);letter-spacing:.06em;color:var(--ink-2);cursor:pointer}
+.rolepick button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--surface-2)}
+.preview{white-space:pre-wrap;overflow-wrap:anywhere;font:500 15px/1.55 var(--body);color:var(--ink-2);background:var(--track);border:1px solid var(--line);border-radius:12px;padding:16px;min-height:150px}
+.row-btn{display:flex;flex-wrap:wrap;gap:10px}
+.note{font-size:14px;color:var(--ink-3)}
+.toast{min-height:22px;font-size:14px;color:var(--accent)}
+footer{border-top:1px solid var(--line);padding-block:32px;color:var(--ink-3);font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+.rise{animation:in .7s cubic-bezier(.2,.7,.2,1) both}
+@keyframes in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+@media (max-width:900px){
+  .hero .wrap{grid-template-columns:1fr;gap:36px}
+  .card-art{order:-1;max-width:560px}
+  .game-wrap,.rsvp,.profile{grid-template-columns:1fr}
+  .avatar{max-width:360px}
+  .stats{grid-template-columns:1fr 1fr}
+  .works{grid-template-columns:1fr}
+  .certs{grid-template-columns:1fr}
+}
+@media (max-width:680px){
+  section{padding-block:56px}
+  .brand span{display:none}
+  .ticket{grid-template-columns:1fr;--stub:0px}
+  .ticket::before,.ticket::after{display:none}
+  .t-main{padding:22px;grid-template-columns:1fr}
+  .t-stub{width:auto;border-left:0;border-top:2px dashed var(--line);border-radius:0 0 20px 20px;flex-direction:row;flex-wrap:wrap;gap:14px 20px;padding:18px 22px}
+  .t-stub .big{font-size:40px}
+  .arena{padding:18px}
+  .cd div{min-width:0;flex:1}
+  .ladder{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}.float.show{opacity:1}}
+</style>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><i></i><span>Mabar Mobile Legend</span></a>
+    <ul>
+      <li><a href="#undangan">Undangan</a></li>
+      <li><a href="#role">Role</a></li>
+      <li><a href="#game">Retribution</a></li>
+      <li><a href="#tebak">Tebak Role</a></li>
+      <li><a href="#portofolio">Portofolio</a></li>
+      <li><a href="#rsvp">RSVP</a></li>
+    </ul>
+  </div>
+</header>
+
+<main id="top">
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg" aria-hidden="true">
+    <img src="assets/hero-petir.jpg" alt="" data-side="petir" class="on">
+    <img src="assets/hero-cahaya.jpg" alt="" data-side="cahaya">
+  </div>
+  <div class="wrap">
+    <div>
+      <p class="eyebrow rise">Undangan mabar · Mobile Legends</p>
+      <h1 class="rise">Mabar <em>Mobile Legend</em></h1>
+      <p class="lead rise">Squad kami butuh satu slot lagi. Kamu diundang main Mobile Legends bareng Nizar. Coba dulu minigame Retribution di bawah, lihat portofolio saya, lalu konfirmasi lewat WhatsApp.</p>
+      <div class="guest rise">
+        <div class="field"><label for="guest">Nama kamu</label><input id="guest" type="text" maxlength="30" placeholder="Tulis namamu" autocomplete="off"></div>
+        <a class="btn btn-solid" href="#rsvp">Konfirmasi Hadir</a>
+        <a class="btn btn-ghost" href="#game">Tes Skill</a>
+      </div>
+      <div class="cd rise" id="cd" aria-label="Hitung mundur menuju mabar"><div><b id="d">--</b><span>Hari</span></div><div><b id="h">--</b><span>Jam</span></div><div><b id="m">--</b><span>Menit</span></div><div><b id="s">--</b><span>Detik</span></div></div>
+      <p class="cd-note" id="cdnote"></p>
+    </div>
+    <div class="card-art rise">
+      <div class="frame" id="frame">
+        <img src="assets/hero-petir.jpg" alt="Ilustrasi hero Mobile Legends bersenjata petir dalam perpustakaan gelap" data-side="petir" class="on">
+        <img src="assets/hero-cahaya.jpg" alt="Ilustrasi hero Mobile Legends bersayap emas dengan tongkat dan lingkaran sihir" data-side="cahaya">
+        <span class="tag-corner" id="frametag">Sisi Petir</span>
+      </div>
+      <div class="sides" role="group" aria-label="Pilih gaya main">
+        <button type="button" class="side" data-side="petir" aria-pressed="true"><b>Sisi Petir</b><span>Serius, push rank. Tampilan gelap</span></button>
+        <button type="button" class="side" data-side="cahaya" aria-pressed="false"><b>Sisi Cahaya</b><span>Santai, ketawa bareng. Tampilan terang</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- UNDANGAN -->
+<section id="undangan" style="padding-top:24px">
+  <div class="wrap">
+    <p class="eyebrow">Detail mabar</p>
+    <h2 class="sec-title">Tiket masuk kamu</h2>
+    <div class="ticket">
+      <div class="t-main">
+        <div class="t-item"><small>Tanggal</small><b id="evDate">-</b></div>
+        <div class="t-item"><small>Mulai</small><b id="evTime">-</b></div>
+        <div class="t-item"><small>Mode</small><b id="evMode">-</b><p id="evModeNote"></p></div>
+        <div class="t-item"><small>Room</small><b>Kode dikirim lewat WhatsApp</b><p>Setelah kamu konfirmasi hadir.</p></div>
+      </div>
+      <div class="t-stub">
+        <small>Slot</small><div class="big">5/5</div><small>Undangan untuk</small><div class="to" id="stubName">Teman Mabar</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROLE -->
+<section id="role" style="padding-top:24px">
+  <div class="wrap">
+    <p class="eyebrow">Role</p>
+    <h2 class="sec-title">Pilih posisimu di medan laga</h2>
+    <p class="sec-sub">Satu squad berisi lima peran yang saling menutup kelemahan. Kenali tiap role, lalu ambil satu. Pilihanmu langsung masuk ke surat kesatria di bagian RSVP.</p>
+    <p class="callout">Susunan klasik: Tank membuka war, Fighter menjaga EXP lane, Assassin berburu di jungle, Mage di mid, Marksman di gold lane, dan Support mengatur ritme. Slot terakhir squad kami masih kosong, jadi role apa pun yang kamu bawa kami terima.</p>
+    <div class="rolegrid">
+      <article class="rolecard" data-role="Tank" data-on="false">
+        <div class="rc-img"><img src="assets/role-tank.jpg" alt="Raksasa kayu dan batu bertanduk di hutan, ditemani burung dan tupai" loading="lazy" style="object-position:center"><span class="rc-pos">Frontline</span><h3 class="rc-name">Tank</h3></div>
+        <div class="rc-body">
+          <p class="rc-tag">Tameng hidup squad</p>
+          <p>Berdiri paling depan, membuka pertarungan, dan menyerap serangan supaya carry bebas bermain. Senjata utamanya kontrol musuh dan ketahanan.</p>
+          <div class="meters" aria-label="Gambaran umum role Tank"><span>Damage</span><div class="lv"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div><span>Tahan</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><span>Gerak</span><div class="lv"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div><span>Kontrol</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+          <p class="rc-job"><b>Tugas di squad:</b> Buka war, kunci target, jaga yang di belakang.</p>
+          <button type="button" class="btn btn-ghost rc-btn" aria-pressed="false">Ambil role ini</button>
+        </div>
+      </article>
+      <article class="rolecard" data-role="Fighter" data-on="false">
+        <div class="rc-img"><img src="assets/role-fighter.jpg" alt="Petarung berzirah hitam dengan aura ungu berjongkok di tengah kabut" loading="lazy" style="object-position:center"><span class="rc-pos">EXP Lane</span><h3 class="rc-name">Fighter</h3></div>
+        <div class="rc-body">
+          <p class="rc-tag">Petarung serba bisa</p>
+          <p>Seimbang antara damage dan daya tahan. Kuat di duel satu lawan satu, bisa menyelam ke barisan musuh lalu keluar dengan selamat.</p>
+          <div class="meters" aria-label="Gambaran umum role Fighter"><span>Damage</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div><span>Tahan</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></div><span>Gerak</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div><span>Kontrol</span><div class="lv"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div></div>
+          <p class="rc-job"><b>Tugas di squad:</b> Menang duel, tekan lane, bantu war dari sisi.</p>
+          <button type="button" class="btn btn-ghost rc-btn" aria-pressed="false">Ambil role ini</button>
+        </div>
+      </article>
+      <article class="rolecard" data-role="Assassin" data-on="false">
+        <div class="rc-img"><img src="assets/role-assassin.jpg" alt="Sosok berambut perak berjubah biru berbulu di tengah pusaran air" loading="lazy" style="object-position:center 30%"><span class="rc-pos">Jungle</span><h3 class="rc-name">Assassin</h3></div>
+        <div class="rc-body">
+          <p class="rc-tag">Pemburu dalam senyap</p>
+          <p>Burst damage tinggi dan gerak cepat. Incar mage dan marksman musuh, habisi dalam hitungan detik, lalu menghilang. Role inilah yang memakai Retribution seperti di minigame.</p>
+          <div class="meters" aria-label="Gambaran umum role Assassin"><span>Damage</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><span>Tahan</span><div class="lv"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div><span>Gerak</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><span>Kontrol</span><div class="lv"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div></div>
+          <p class="rc-job"><b>Tugas di squad:</b> Farm jungle, rebut Lord dan Turtle, culik target lemah.</p>
+          <button type="button" class="btn btn-ghost rc-btn" aria-pressed="false">Ambil role ini</button>
+        </div>
+      </article>
+      <article class="rolecard" data-role="Mage" data-on="false">
+        <div class="rc-img"><img src="assets/role-mage.jpg" alt="Penyihir bertongkat trisula dengan petir biru di atas ombak malam" loading="lazy" style="object-position:center 30%"><span class="rc-pos">Mid Lane</span><h3 class="rc-name">Mage</h3></div>
+        <div class="rc-body">
+          <p class="rc-tag">Penyihir jarak jauh</p>
+          <p>Damage sihir area dan crowd control dari belakang. Satu combo skill bisa membalik war, tapi rapuh kalau sampai terkunci.</p>
+          <div class="meters" aria-label="Gambaran umum role Mage"><span>Damage</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><span>Tahan</span><div class="lv"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div><span>Gerak</span><div class="lv"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div><span>Kontrol</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></div></div>
+          <p class="rc-job"><b>Tugas di squad:</b> Bersihkan minion cepat, rotasi, ledakkan combo saat war.</p>
+          <button type="button" class="btn btn-ghost rc-btn" aria-pressed="false">Ambil role ini</button>
+        </div>
+      </article>
+      <article class="rolecard" data-role="Marksman" data-on="false">
+        <div class="rc-img"><img src="assets/role-marksman.jpg" alt="Pemanah berambut perak menarik busur cahaya biru di bawah bulan" loading="lazy" style="object-position:center"><span class="rc-pos">Gold Lane</span><h3 class="rc-name">Marksman</h3></div>
+        <div class="rc-body">
+          <p class="rc-tag">Penembus tower</p>
+          <p>Damage fisik terus-menerus dari jarak jauh, jago merobohkan tower dan boss. Lemah di awal, mengerikan di akhir game.</p>
+          <div class="meters" aria-label="Gambaran umum role Marksman"><span>Damage</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><span>Tahan</span><div class="lv"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div><span>Gerak</span><div class="lv"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div><span>Kontrol</span><div class="lv"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div></div>
+          <p class="rc-job"><b>Tugas di squad:</b> Kumpulkan emas, push tower, jadi sumber damage utama.</p>
+          <button type="button" class="btn btn-ghost rc-btn" aria-pressed="false">Ambil role ini</button>
+        </div>
+      </article>
+      <article class="rolecard" data-role="Support" data-on="false">
+        <div class="rc-img"><img src="assets/role-support.jpg" alt="Gadis berambut merah muda duduk di dahan pohon bersama roh rubah bercahaya" loading="lazy" style="object-position:center 40%"><span class="rc-pos">Roam</span><h3 class="rc-name">Support</h3></div>
+        <div class="rc-body">
+          <p class="rc-tag">Penjaga ritme squad</p>
+          <p>Heal, shield, buff, dan kontrol. Support memasang vision, melindungi carry, dan menentukan kapan squad maju atau mundur.</p>
+          <div class="meters" aria-label="Gambaran umum role Support"><span>Damage</span><div class="lv"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div><span>Tahan</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div><span>Gerak</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div><span>Kontrol</span><div class="lv"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></div></div>
+          <p class="rc-job"><b>Tugas di squad:</b> Roam, pasang vision, selamatkan rekan di detik genting.</p>
+          <button type="button" class="btn btn-ghost rc-btn" aria-pressed="false">Ambil role ini</button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- GAME -->
+<section id="game">
+  <div class="wrap">
+    <p class="eyebrow">Mini game</p>
+    <h2 class="sec-title">Retribution Rush</h2>
+    <p class="sec-sub">Lord sekarat. Di seberang kolam, jungler lawan sudah menaruh jarinya di tombol Retri, dan dia tidak akan menunggu. Tahan jarimu sampai darah Lord menyentuh zona hijau, lalu sambar sebelum dia. Lima ronde, makin cepat, makin sempit, dan skornya dijumlahkan dengan minigame Tebak Role untuk menentukan gelarmu.</p>
+    <div class="game-wrap">
+      <div class="arena" id="arena">
+        <div class="hud">
+          <div class="pips" id="pips" aria-label="Ronde"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="score">Skor <b id="score">0</b></div>
+        </div>
+        <div class="boss" id="boss"><img src="assets/lord.jpg" alt="Lord emas dengan trisula di kolam objektif"><div class="float" id="float"></div></div>
+        <div>
+          <div class="hpbar"><div class="hpfill" id="hpfill"></div><div class="zone" id="zone"><span>RETRI</span></div><div class="etick" id="etick"></div></div>
+          <div class="hpnum" style="margin-top:8px"><span id="hpval">0</span><span>Zona hijau: Retri 1200 damage</span></div>
+          <p class="enemy" id="enemy"><i></i><span id="enemytxt">Lawan: jungler musuh siaga</span></p>
+        </div>
+        <p class="msg" id="msg">Kolam Lord menunggu. Tekan Mulai kalau jarimu sudah siap.</p>
+        <button type="button" class="btn btn-solid start" id="start">Mulai</button>
+        <button type="button" class="retri" id="retri" hidden disabled aria-label="Retribution. Pintasan keyboard: spasi"><img src="assets/retri.png" alt=""></button>
+      </div>
+      <div class="side-panel">
+        <div class="panel">
+          <h3>Aturan pertarungan</h3>
+          <ol><li>Darah Lord turun karena tim menyerangnya. Tekan Retri (atau spasi) hanya saat bar menyala hijau, kalau lebih awal Retri meleset.</li><li>Musuh menekan Retri hanya sesaat setelah garis awal zona hijau terlewati. Kamu harus fokus ke garis itu dan menekan tepat saat bar menyentuhnya. Ruang menangmu sepersekian detik, dan di ronde akhir selebar kedipan mata.</li><li>Poin terbesar untuk yang menekan sedekat mungkin sebelum musuh. Terlalu nekat dan kamu kalah, terlalu santai poinmu kecil.</li><li>Garis merah di akhir ronde menunjukkan kapan musuh menekan, supaya kamu bisa belajar membaca ritmenya.</li><li>Mulai ronde 2 darah Lord kadang melonjak turun karena burst tim, dan mulai ronde 3 angka darah disembunyikan. Percayai matamu.</li></ol>
+        </div>
+        <div class="panel scoreboard"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEBAK ROLE -->
+<section id="tebak" style="padding-top:24px">
+  <div class="wrap">
+    <p class="eyebrow">Mini game 2</p>
+    <h2 class="sec-title">Tebak Role Kilat</h2>
+    <p class="sec-sub">Sebuah hero muncul dalam kabut. Makin lama kamu menunggu, makin jelas gambarnya, tapi makin kecil poinmu. Kenali role-nya dari siluet, warna, dan senjatanya sebelum waktu habis. Enam hero, enam role, dan skornya digabung dengan Retribution Rush.</p>
+    <div class="game-wrap">
+      <div class="arena" id="arena2">
+        <div class="hud">
+          <div class="pips" id="pips2" aria-label="Ronde tebakan"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="score">Skor <b id="score2">0</b></div>
+        </div>
+        <div class="g2-pic"><img id="g2img" src="assets/role-tank.jpg" alt="Hero misterius"><div class="float" id="float2"></div></div>
+        <div class="timer" id="timer"><i id="timerfill"></i></div>
+        <p class="msg" id="msg2">Enam hero akan muncul satu per satu. Tekan Mulai kalau matamu sudah tajam.</p>
+        <div class="opts" id="opts" role="group" aria-label="Pilih role" hidden></div>
+        <button type="button" class="btn btn-solid start" id="start2">Mulai</button>
+      </div>
+      <div class="side-panel">
+        <div class="panel">
+          <h3>Aturan tebakan</h3>
+          <ol><li>Gambar mulai buram dan makin jelas selama 9 detik.</li><li>Pilih role dengan tombol, atau tekan angka 1 sampai 6 di keyboard.</li><li>Jawaban benar bernilai 20 sampai 50 poin, makin cepat makin besar. Salah atau kehabisan waktu bernilai nol.</li><li>Skor terbaikmu di sini ditambahkan ke skor Retribution Rush untuk gelar akhir.</li></ol>
+        </div>
+        <div class="panel scoreboard"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PORTOFOLIO -->
+<section id="portofolio" style="background:var(--surface);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <p class="eyebrow">Portofolio</p>
+    <h2 class="sec-title">Kenalan dulu dengan tuan rumah</h2>
+    <div class="tabs" role="tablist" aria-label="Menu portofolio">
+      <button class="tab" role="tab" id="t-profil" aria-controls="p-profil" aria-selected="true" type="button">Profil</button>
+      <button class="tab" role="tab" id="t-karya" aria-controls="p-karya" aria-selected="false" type="button">Karya</button>
+      <button class="tab" role="tab" id="t-sertifikat" aria-controls="p-sertifikat" aria-selected="false" type="button">Sertifikat</button>
+    </div>
+
+    <div role="tabpanel" id="p-profil" aria-labelledby="t-profil">
+      <div class="profile">
+        <div class="avatar"><img src="assets/photo.jpg" alt="Foto Raden Muhammad Nizar Yanuar Saputra"></div>
+        <div>
+          <h3>Raden Muhammad Nizar Yanuar Saputra, A.Md.Kom.</h3>
+          <p class="role">Front-End Developer · Technical Content Specialist</p>
+          <p class="bio">Lulusan D3 Sistem Informasi Universitas Bina Sarana Informatika dengan predikat Pujian. Sejak 2020 saya bekerja sebagai Technical Content Specialist di Indozone, dan sejak 2024 memperdalam front-end web development dan DevOps. Saya suka memimpin komunitas, menulis dokumentasi yang jelas, dan mengambil keputusan dari data.</p>
+          <div class="stats">
+            <div class="stat"><b>3,96</b><span>IPK dari 4,00, predikat Pujian</span></div>
+            <div class="stat"><b>617</b><span>Skor TOEFL ITP</span></div>
+            <div class="stat"><b>+35%</b><span>Traffic organik lewat SEO</span></div>
+            <div class="stat"><b>1,12 jt</b><span>Page views, peringkat 1 di tim</span></div>
+          </div>
+          <div class="chips"><span class="pill">HTML · CSS · JavaScript</span><span class="pill">Git / GitHub</span><span class="pill">MySQL</span><span class="pill">DevOps dasar</span><span class="pill">SEO</span><span class="pill">Google Analytics</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div role="tabpanel" id="p-karya" aria-labelledby="t-karya" hidden>
+      <div class="works">
+        <article class="work"><small>Web app · Basis data</small><h4>Top Up Voucher Game Online</h4><p>Proyek tugas akhir berupa sistem penjualan voucher game berbasis web, lengkap dengan basis data relasional MySQL, alur transaksi online, dan black-box testing.</p><ul><li>Transaksi 50% lebih singkat</li><li>MySQL</li></ul></article>
+        <article class="work"><small>Technical content · SEO</small><h4>Optimasi SEO di Indozone</h4><p>Strategi SEO berbasis riset kata kunci dan analisis tren pembaca, plus panduan teknis untuk tim penulis.</p><button type="button" class="shot" data-lb="assets/seo-3.jpg" aria-label="Perbesar bukti page views"><img src="assets/seo-3.jpg" alt="Ringkasan page views: Nizar Yanuar peringkat pertama dengan 1.124.664 page views"></button><ul><li>+35% traffic</li><li>2.613 konten</li></ul></article>
+        <article class="work"><small>Komunitas · Discord</small><h4>Komunitas Belajar Coding</h4><p>Komunitas interaktif untuk mahasiswa yang ingin memperkuat logika pemrograman lewat diskusi dan latihan bersama.</p><ul><li>100+ mahasiswa</li><li>Discord</li></ul></article>
+        <article class="work"><small>Kepemimpinan</small><h4>Ketua HIMSI UBSI</h4><p>Memimpin himpunan mahasiswa Sistem Informasi dan menjalankan program kerja edukasi dan teknologi tepat waktu.</p><ul><li>30+ anggota</li><li>5+ program kerja</li></ul></article>
+      </div>
+    </div>
+
+    <div role="tabpanel" id="p-sertifikat" aria-labelledby="t-sertifikat" hidden>
+      <div class="certs">
+        <article class="cert"><button type="button" data-lb="assets/cert-dbs.jpg" aria-label="Perbesar sertifikat Front-End Web Developer"><img src="assets/cert-dbs.jpg" alt="Sertifikat Front-End Web Developer level Mahir, DBS Foundation Coding Camp 2024"></button><h4>Front-End Web Developer (Mahir)</h4><p>DBS Foundation Coding Camp × Dicoding, 110 jam, Desember 2024.</p></article>
+        <article class="cert"><button type="button" data-lb="assets/cert-devops.jpg" aria-label="Perbesar sertifikat DevOps"><img src="assets/cert-devops.jpg" alt="Sertifikat Belajar Dasar-Dasar DevOps dari Dicoding Academy"></button><h4>Belajar Dasar-Dasar DevOps</h4><p>Dicoding Academy, September 2024.</p></article>
+        <article class="cert"><button type="button" data-lb="assets/cert-toefl.jpg" aria-label="Perbesar sertifikat TOEFL"><img src="assets/cert-toefl.jpg" alt="Sertifikat TOEFL ITP skor 617"></button><h4>TOEFL ITP, skor 617</h4><p>ETS / IIEF Jakarta, November 2025.</p></article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RSVP -->
+<section id="rsvp">
+  <div class="wrap">
+    <p class="eyebrow">RSVP</p>
+    <h2 class="sec-title">Ikut mabar?</h2>
+    <p class="sec-sub">Tulis sumpahmu. Surat kesatria di bawah terisi otomatis dengan namamu, panji yang kamu bela, role pilihanmu, dan gelar dari Retribution Rush.</p>
+    <div class="rsvp">
+      <div class="panel">
+        <div class="field" style="max-width:none"><label for="guest2">Nama kamu</label><input id="guest2" type="text" maxlength="30" placeholder="Tulis namamu" autocomplete="off"></div>
+        <div>
+          <p class="eyebrow" style="margin-bottom:10px;color:var(--ink-3)">Role favorit</p>
+          <div class="rolepick" id="rolepick" role="group" aria-label="Role favorit">
+            <button type="button" aria-pressed="false">Tank</button><button type="button" aria-pressed="false">Fighter</button><button type="button" aria-pressed="false">Assassin</button><button type="button" aria-pressed="false">Mage</button><button type="button" aria-pressed="false">Marksman</button><button type="button" aria-pressed="false">Support</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <p class="eyebrow" style="color:var(--ink-3)">Surat kesatria</p>
+        <div class="preview" id="preview"></div>
+        <div class="row-btn">
+          <a class="btn btn-solid" id="wa" href="https://wa.me/62895347204406" target="_blank" rel="noopener">Kirim via WhatsApp</a>
+          <button class="btn btn-ghost" id="copy" type="button">Salin pesan</button>
+        </div>
+        <p class="note">Nomor WhatsApp Nizar: 0895 3472 04406</p>
+        <p class="toast" id="toast" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><span>Dibuat oleh Raden Muhammad Nizar Yanuar Saputra</span><span>Mobile Legends hanya tema undangan, bukan afiliasi resmi.</span><span>Musik: Battle For Camelot, Tartalo Music</span></div></footer>
+<div class="music"><span class="music-hint" id="musichint" hidden>Ketuk di mana saja untuk memutar musik</span><button type="button" id="music" aria-pressed="false" aria-label="Putar musik latar"><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><svg class="play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button></div>
+<div class="lb" id="lb" role="dialog" aria-label="Pratinjau gambar"><img alt="" id="lbimg"></div>
+
+<script>
+(function(){
+  /* Ubah detail acara di sini */
+  var EVENT={start:'2026-11-21T20:30:00+07:00',date:'Sabtu, 21 November 2026',time:'20.30 WIB',mode:'Ranked Party',modeNote:'Squad 5 orang, target naik bintang',wa:'62895347204406'};
+
+  var $=function(i){return document.getElementById(i)};
+  var root=document.documentElement,side='petir',role='',score=0,best=0;
+  function safe(fn){try{return fn()}catch(e){return null}}
+
+  $('evDate').textContent=EVENT.date;$('evTime').textContent=EVENT.time;$('evMode').textContent=EVENT.mode;$('evModeNote').textContent=EVENT.modeNote;
+
+  /* Faction */
+  var SIDE={petir:{n:'Sisi Petir',s:'serius, push rank',k:'Sisi Petir, panji para penggempur yang haus kenaikan rank'},cahaya:{n:'Sisi Cahaya',s:'santai, seru-seruan',k:'Sisi Cahaya, panji para ksatria ceria yang menang sambil tertawa'}};
+  function setSide(s){
+    side=s;
+    if(s==='cahaya')root.setAttribute('data-faction','cahaya');else root.removeAttribute('data-faction');
+    document.querySelectorAll('[data-side]').forEach(function(el){
+      if(el.tagName==='IMG')el.classList.toggle('on',el.dataset.side===s);
+      else el.setAttribute('aria-pressed',el.dataset.side===s?'true':'false');
+    });
+    $('frametag').textContent=SIDE[s].n;
+    msgUpdate();
+  }
+  document.querySelectorAll('.side').forEach(function(b){b.onclick=function(){setSide(b.dataset.side)}});
+
+  /* Name sync */
+  var gi=[$('guest'),$('guest2')];
+  function name(){return (gi[0].value||'').trim()}
+  gi.forEach(function(el,i){el.addEventListener('input',function(){gi[1-i].value=el.value;$('stubName').textContent=name()||'Teman Mabar';msgUpdate()})});
+
+  /* Countdown */
+  function tick(){
+    var t=new Date(EVENT.start).getTime()-Date.now();
+    if(t<=0){['d','h','m','s'].forEach(function(k){$(k).textContent='00'});$('cdnote').textContent='Mabar sudah dimulai. Kabari Nizar lewat WhatsApp.';return}
+    var p=function(n){return String(n).padStart(2,'0')};
+    $('d').textContent=p(Math.floor(t/864e5));$('h').textContent=p(Math.floor(t%864e5/36e5));$('m').textContent=p(Math.floor(t%36e5/6e4));$('s').textContent=p(Math.floor(t%6e4/1e3));
+    $('cdnote').textContent='Menuju '+EVENT.date+', '+EVENT.time;
+  }
+  tick();setInterval(tick,1000);
+
+  /* Ranks */
+  var RANKS=[[0,'Warrior'],[150,'Elite'],[280,'Master'],[400,'Epic'],[520,'Legend'],[640,'Mythic']],MAXT=800;
+  function rankOf(s){var r=RANKS[0][1];RANKS.forEach(function(x){if(s>=x[0])r=x[1]});return r}
+  var sR=+(safe(function(){return localStorage.getItem('mabar-best')})||0)||0,sT=+(safe(function(){return localStorage.getItem('mabar-t')})||0)||0;
+  function total(){return sR+sT}
+  function showBest(){
+    var t=total(),cur=rankOf(t);
+    var lad=RANKS.map(function(r,i){var hi=i<RANKS.length-1?RANKS[i+1][0]-1:MAXT;return '<li class="'+(t>0&&r[1]===cur?'you':'')+'"><span>'+r[1]+'</span><span>'+r[0]+'–'+hi+'</span></li>'}).join('');
+    var h='<h3>Skor gabungan</h3><div class="rank"><b>'+(t>0?cur:'Belum main')+'</b><span>Total <strong style="color:var(--ink)">'+t+'</strong> / '+MAXT+'</span></div>'+
+      '<div class="split"><div><small>Retribution Rush</small><b>'+sR+'</b><span>/ 500</span></div><div><small>Tebak Role</small><b>'+sT+'</b><span>/ 300</span></div></div><ul class="ladder">'+lad+'</ul>';
+    document.querySelectorAll('.scoreboard').forEach(function(el){el.innerHTML=h});
+    msgUpdate();
+  }
+
+  /* Game */
+  var RETRI=1200,R=5,RATES=[1100,1400,1750,2200,2800];
+  /* WIN: ruang menang pemain (ms) antara zona terbuka dan Retri musuh, per ronde */
+  var WIN=[[160,200],[120,160],[90,120],[65,90],[45,65]];
+  var LEVEL=['Panas','Sulit','Brutal','Mythic','Neraka'];
+  var g={round:0,run:false,hp:0,start:1,eh:0,last:0,raf:0,ph:0,total:0};
+  var pips=$('pips').children;
+  function setHp(){$('hpfill').style.width=Math.max(0,g.hp/g.start*100)+'%';$('hpval').textContent=(g.run&&g.round>=2)?'???':Math.max(0,Math.round(g.hp));$('zone').classList.toggle('on',g.run&&g.hp<=RETRI)}
+  function say(h){$('msg').innerHTML=h}
+  function flash(t,bad){var f=$('float');f.textContent=t;f.className='float'+(bad?' bad':'');void f.offsetWidth;f.classList.add('show')}
+  function resetPips(){for(var i=0;i<R;i++)pips[i].className=''}
+  function enemyState(fired,t){$('enemy').classList.toggle('fired',fired);$('enemytxt').textContent=t}
+  function startRound(){
+    g.start=RETRI+RATES[g.round]*2;g.hp=g.start;g.ph=Math.random()*6;g.last=0;g.run=true;
+    g.burst=g.round>=1?RETRI+600+Math.random()*(g.start-RETRI-1200)*.7:0;
+    var e=WIN[g.round];g.eh=RETRI-RATES[g.round]*(e[0]+Math.random()*(e[1]-e[0]))/1000;
+    $('zone').style.width=(RETRI/g.start*100)+'%';
+    $('etick').classList.remove('show');$('etick').style.left=(g.eh/g.start*100)+'%';
+    $('boss').className='boss';
+    pips[g.round].className='cur';
+    enemyState(false,'Lawan: jungler musuh siaga');
+    say('Ronde '+(g.round+1)+' dari '+R+' · <b>'+LEVEL[g.round]+'</b>. Tunggu zona hijau, tekan sebelum musuh.');
+    setHp();$('retri').disabled=false;
+    g.raf=requestAnimationFrame(loop);
+  }
+  function loop(ts){
+    if(!g.run)return;
+    if(!g.last)g.last=ts;
+    var dt=(ts-g.last)/1000;g.last=ts;
+    g.hp-=RATES[g.round]*(1+.18*Math.sin(ts/140+g.ph))*dt;
+    if(g.burst&&g.hp<g.burst){g.hp-=380;g.burst=0}
+    if(g.hp<=g.eh){g.hp=g.eh;setHp();end(0,'<b>Musuh Retri duluan!</b> Lord jatuh ke tim lawan. Tekan lebih cepat begitu zona menyala.',true,'MUSUH RETRI!');return}
+    setHp();
+    g.raf=requestAnimationFrame(loop);
+  }
+  function press(){
+    if(!g.run)return;
+    if(g.hp>RETRI){end(0,'<b>Terlalu cepat!</b> Retri meleset, darah Lord masih di atas zona hijau.',true,'TERLALU CEPAT');return}
+    var close=Math.min(1,(RETRI-g.hp)/(RETRI-g.eh));
+    var pts=40+Math.round(60*close);
+    var ms=Math.max(0,Math.round((g.hp-g.eh)/RATES[g.round]*1000));
+    end(pts,'<b>Lord jadi milikmu!</b> Kamu unggul sekitar '+ms+' ms dari Retri musuh.',false,'+'+pts);
+  }
+  function end(pts,html,fail,label){
+    g.run=false;cancelAnimationFrame(g.raf);$('retri').disabled=true;
+    g.total+=pts;$('score').textContent=g.total;
+    pips[g.round].className=fail?'fail':'done';
+    $('etick').classList.add('show');
+    enemyState(label==='MUSUH RETRI!','Lawan: '+(label==='MUSUH RETRI!'?'Retri musuh meledak lebih dulu':'terlambat menekan'));
+    $('boss').className='boss '+(fail?'lost':'dead');
+    if(label==='MUSUH RETRI!'){$('boss').classList.add('shake')}
+    flash(label,fail);
+    say(html);
+    setHp();
+    g.round++;
+    if(g.round<R)setTimeout(startRound,2000);else setTimeout(finish,2000);
+  }
+  function finish(){
+    score=g.total;
+    if(score>sR){sR=score;safe(function(){localStorage.setItem('mabar-best',String(sR))})}
+    showBest();
+    say('Selesai! Skor <b>'+score+'</b> / 500. Gelar gabungan: <b>'+rankOf(total())+'</b> (total '+total()+' / '+MAXT+'). Lanjut ke Tebak Role untuk menambah skor, atau Main Lagi.');
+    $('retri').hidden=true;$('start').hidden=false;$('start').textContent='Main Lagi';
+    $('boss').className='boss';$('etick').classList.remove('show');enemyState(false,'Lawan: jungler musuh siaga');
+    g.hp=g.start;setHp();
+  }
+  $('start').onclick=function(){
+    g.round=0;g.total=0;$('score').textContent=0;resetPips();
+    $('start').hidden=true;$('retri').hidden=false;
+    startRound();
+  };
+  $('retri').addEventListener('pointerdown',function(e){e.preventDefault();press()});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape')$('lb').classList.remove('open');
+    if(g.run&&(e.code==='Space')){e.preventDefault();press()}
+  });
+  g.hp=g.start=RETRI+RATES[0]*2;$('zone').style.width=(RETRI/g.start*100)+'%';setHp();
+
+  /* Game 2: Tebak Role */
+  var ROLES=[['Tank','tank','center'],['Fighter','fighter','center'],['Assassin','assassin','center 30%'],['Mage','mage','center 30%'],['Marksman','marksman','center'],['Support','support','center 40%']];
+  var T2=9000,R2=6,MAXB=28;
+  var q={i:0,order:[],run:false,t0:0,raf:0,total:0,cur:null};
+  var pips2=$('pips2').children,optsEl=$('opts'),g2img=$('g2img'),tfill=$('timerfill'),tbox=$('timer');
+  ROLES.forEach(function(r,k){var b=document.createElement('button');b.type='button';b.className='opt';b.innerHTML='<span>'+r[0]+'</span><small>'+(k+1)+'</small>';b.onclick=function(){answer(r[0],performance.now()-q.t0)};optsEl.appendChild(b)});
+  function say2(h){$('msg2').innerHTML=h}
+  function flash2(t,bad){var f=$('float2');f.textContent=t;f.className='float'+(bad?' bad':'');void f.offsetWidth;f.classList.add('show')}
+  function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+  function startQ(){
+    q.cur=q.order[q.i];
+    g2img.style.transition='none';g2img.style.objectPosition=q.cur[2];g2img.alt='Hero misterius';
+    g2img.src='assets/role-'+q.cur[1]+'.jpg';
+    g2img.style.filter='blur('+MAXB+'px)';g2img.style.transform='scale(1.15)';
+    Array.prototype.forEach.call(optsEl.children,function(b){b.className='opt';b.disabled=false});
+    tbox.classList.remove('low');tfill.style.width='100%';
+    pips2[q.i].className='cur';
+    say2('Hero '+(q.i+1)+' dari '+R2+'. Role apa dia?');
+    q.run=true;q.t0=performance.now();q.raf=requestAnimationFrame(frame);
+  }
+  function frame(now){
+    if(!q.run)return;
+    var t=now-q.t0,k=Math.min(1,t/T2);
+    g2img.style.filter='blur('+(MAXB*(1-k))+'px)';g2img.style.transform='scale('+(1.15-.15*k)+')';
+    tfill.style.width=((1-k)*100)+'%';tbox.classList.toggle('low',k>.7);
+    if(t>=T2){answer(null,T2);return}
+    q.raf=requestAnimationFrame(frame);
+  }
+  function answer(choice,t){
+    if(!q.run)return;
+    q.run=false;cancelAnimationFrame(q.raf);
+    var ok=choice===q.cur[0];
+    var pts=ok?20+Math.round(30*(1-Math.min(1,t/T2))):0;
+    g2img.style.transition='filter .5s ease,transform .5s ease';g2img.style.filter='blur(0)';g2img.style.transform='scale(1)';
+    g2img.alt='Hero dengan role '+q.cur[0];
+    Array.prototype.forEach.call(optsEl.children,function(b){
+      b.disabled=true;var n=b.firstChild.textContent;
+      if(n===q.cur[0])b.classList.add('ok');else if(n===choice)b.classList.add('no');
+    });
+    q.total+=pts;$('score2').textContent=q.total;
+    pips2[q.i].className=ok?'done':'fail';
+    flash2(ok?'+'+pts:(choice===null?'WAKTU HABIS':'SALAH'),!ok);
+    say2(ok?'<b>Tepat!</b> Dia seorang <b>'+q.cur[0]+'</b>. Kamu menjawab dalam '+(t/1000).toFixed(1)+' detik.':(choice===null?'<b>Waktu habis.</b> Jawabannya <b>'+q.cur[0]+'</b>.':'<b>Meleset.</b> Jawabannya <b>'+q.cur[0]+'</b>.'));
+    q.i++;
+    if(q.i<R2)setTimeout(startQ,2000);else setTimeout(finishQ,2000);
+  }
+  function finishQ(){
+    if(q.total>sT){sT=q.total;safe(function(){localStorage.setItem('mabar-t',String(sT))})}
+    showBest();
+    say2('Selesai! Skor <b>'+q.total+'</b> / 300. Total gabungan: <b>'+total()+'</b> / '+MAXT+', gelar <b>'+rankOf(total())+'</b>. Lanjut ke RSVP, atau Main Lagi.');
+    optsEl.hidden=true;$('start2').hidden=false;$('start2').textContent='Main Lagi';
+  }
+  $('start2').onclick=function(){
+    q.i=0;q.total=0;q.order=shuffle(ROLES);$('score2').textContent=0;
+    for(var i=0;i<R2;i++)pips2[i].className='';
+    $('start2').hidden=true;optsEl.hidden=false;startQ();
+  };
+  document.addEventListener('keydown',function(e){
+    if(q.run&&/^[1-6]$/.test(e.key)&&e.target.tagName!=='INPUT')answer(ROLES[+e.key-1][0],performance.now()-q.t0);
+  });
+
+  /* Tabs */
+  var tabs=document.querySelectorAll('.tab');
+  tabs.forEach(function(t){t.onclick=function(){
+    tabs.forEach(function(x){var on=x===t;x.setAttribute('aria-selected',on?'true':'false');$(x.getAttribute('aria-controls')).hidden=!on});
+  }});
+
+  /* Lightbox */
+  var lb=$('lb'),lbimg=$('lbimg');
+  document.querySelectorAll('[data-lb]').forEach(function(b){b.onclick=function(){lbimg.src=b.dataset.lb;lb.classList.add('open')}});
+  lb.onclick=function(){lb.classList.remove('open')};
+
+  /* RSVP */
+  var rp=$('rolepick').children,cards=document.querySelectorAll('.rolecard');
+  function setRole(n){
+    role=(role===n)?'':n;
+    Array.prototype.forEach.call(rp,function(x){x.setAttribute('aria-pressed',x.textContent===role?'true':'false')});
+    cards.forEach(function(c){var on=c.dataset.role===role;c.dataset.on=on;var b=c.querySelector('.rc-btn');b.setAttribute('aria-pressed',on?'true':'false');b.textContent=on?'Role terpilih':'Ambil role ini'});
+    msgUpdate();
+  }
+  Array.prototype.forEach.call(rp,function(b){b.onclick=function(){setRole(b.textContent)}});
+  cards.forEach(function(c){c.querySelector('.rc-btn').onclick=function(){setRole(c.dataset.role)}});
+  function msg(){
+    var n=name()||'(nama kesatria)',t=total();
+    var r=t>0?'Retribution Rush '+sR+'/500, Tebak Role '+sT+'/'+300+', bergelar '+rankOf(t)+' dengan total '+t+' dari '+MAXT:'belum menjalani ujian';
+    var l=['⚔️ Salam hormat, Tuan Nizar!','',
+      'Hamba, '+n+', bersumpah setia pada panji '+SIDE[side].k+', dan menyambut panggilan perang di Land of Dawn.','',
+      '📜 Waktu pertempuran: '+EVENT.date+', pukul '+EVENT.time,
+      '🛡️ Panji yang dibela: '+SIDE[side].n,
+      '🗡️ Peran di medan laga: '+(role||'belum ditentukan, hamba ikut arahan panglima'),
+      '🏆 Ujian kesatria: '+r,'',
+      'Kirimkan kode room, dan hamba akan tiba di gerbang pertempuran tepat waktu. Demi kemenangan, hingga Victory! ⚔️'];
+    return l.join('\n');
+  }
+  function msgUpdate(){
+    var m=msg();$('preview').textContent=m;
+    $('wa').href='https://wa.me/'+EVENT.wa+'?text='+encodeURIComponent(m);
+  }
+  $('copy').onclick=function(){
+    var m=msg();
+    function ok(){$('toast').textContent='Surat disalin. Tempel di WhatsApp.'}
+    function fb(){var r=document.createRange();r.selectNodeContents($('preview'));var s=getSelection();s.removeAllRanges();s.addRange(r);$('toast').textContent='Pesan terpilih. Salin secara manual.'}
+    try{navigator.clipboard.writeText(m).then(ok,fb)}catch(e){fb()}
+  };
+
+  /* Musik latar */
+  var au=new Audio('assets/bgm.mp3');au.loop=true;au.preload='auto';au.volume=0;
+  var playing=false,userOff=false,resume=false,fade=0,VOL=.45;
+  var mb=$('music'),mh=$('musichint');
+  function ui(){mb.setAttribute('aria-pressed',playing?'true':'false');mb.setAttribute('aria-label',playing?'Matikan musik latar':'Putar musik latar');mb.classList.toggle('on',playing);mh.hidden=playing||userOff}
+  function fadeIn(){clearInterval(fade);fade=setInterval(function(){au.volume=Math.min(VOL,au.volume+.03);if(au.volume>=VOL)clearInterval(fade)},100)}
+  function playM(){var pr=au.play();if(pr&&pr.then){pr.then(function(){playing=true;fadeIn();ui()},function(){playing=false;ui()})}}
+  function stopM(){clearInterval(fade);au.pause();playing=false;ui()}
+  mb.onclick=function(){if(playing){userOff=true;stopM()}else{userOff=false;playM()}};
+  ['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function first(e){if(e.target&&e.target.closest&&e.target.closest('#music'))return;if(!playing&&!userOff)playM();if(playing)document.removeEventListener(ev,first,true)},true)});
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){if(playing){au.pause();resume=true}}
+    else if(resume&&!userOff){resume=false;var pr=au.play();if(pr&&pr.catch)pr.catch(function(){})}
+  });
+  ui();playM();
+
+  setSide('petir');showBest();
+})();
+</script>
+
+</body></html>
